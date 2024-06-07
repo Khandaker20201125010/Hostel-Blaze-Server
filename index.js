@@ -22,6 +22,7 @@ async function run() {
     const mealsCollection = client.db("Hostel").collection("meals");
     const reviewCollection = client.db("Hostel").collection("reviews");
     const userCollection = client.db("Hostel").collection("users");
+    const cartCollection = client.db("Hostel").collection("carts");
 
     app.get('/meals', async (req, res) => {
       const result = await mealsCollection.find().toArray();
@@ -29,6 +30,17 @@ async function run() {
     });
     app.get('/users', async (req, res) => {
       const result = await userCollection.find().toArray();
+      res.send(result);
+    });
+    app.get('/carts', async (req, res) => {
+      const email =req.query.email;
+      const query = {email:email};
+      const result = await cartCollection.find(query).toArray();
+      res.send(result);
+    });
+    app.post('/carts', async (req, res) => {
+      const cartsItem = req.body;
+      const result = await cartCollection.insertOne(cartsItem);
       res.send(result);
     });
 
@@ -44,6 +56,7 @@ async function run() {
       const result = await mealsCollection.insertOne(addFood);
       res.send(result);
     });
+  
     app.post('/users', async (req, res) => {
       const user = req.body;
       const result = await userCollection.insertOne(user);
