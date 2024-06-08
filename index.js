@@ -60,14 +60,42 @@ async function run() {
       const id =req.params.id
       const query ={_id:new ObjectId(id)}
       const result = await cartCollection.deleteOne(query);
-      res.send(result)
+      res.send(result)  
     })
     app.post('/users', async (req, res) => {
       const user = req.body;
       const result = await userCollection.insertOne(user);
       res.send(result);
     });
-    
+    app.post('/subscribe', async (req, res) => {
+      const { email } = req.body;
+      const filter = { email: email };
+      const updateDoc = {
+          $set: {
+              isSubscribed: true,
+          },
+      };
+      const result = await userCollection.updateOne(filter, updateDoc);
+      res.send({ success: result.modifiedCount > 0 });
+  });
+  
+  app.get('/user/:email', async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email };
+      const user = await userCollection.findOne(query);
+      res.send(user);
+  });
+  app.patch('/users/admin/:id',async(req,res) =>{
+    const id =req.params.id;
+    const filter ={_id: new ObjectId(id)};
+    const updatedDoc = {
+      $set: {
+        role: 'admin'
+      }
+    }
+    const result = await userCollection.updateOne(filter,updatedDoc)
+    res.send(result);
+  })
 
     app.patch('/meals/uptodate/:id', async (req, res) => {
       const id = req.params.id;
