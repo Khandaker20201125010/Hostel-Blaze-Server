@@ -22,7 +22,7 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     const mealsCollection = client.db("Hostel").collection("meals");
-    const reviewCollection = client.db("Hostel").collection("reviews");
+    const upComingMealsCollection = client.db("Hostel").collection("upComingMeals");
     const userCollection = client.db("Hostel").collection("users");
     const cartCollection = client.db("Hostel").collection("carts");
     app.post('/jwt', async (req, res) => {
@@ -65,9 +65,19 @@ async function run() {
       const result = await mealsCollection.find().toArray();
       res.send(result);
     });
-    app.post('/meals', async (req, res) => {
+   
+    app.post('/meals', verifyToken, verifyAdmin, async (req, res) => {
       const item = req.body;
       const result = await mealsCollection.insertOne(item);
+      res.send(result);
+    });
+    app.post('/upComingMeals', verifyToken, verifyAdmin, async (req, res) => {
+      const item = req.body;
+      const result = await upComingMealsCollection.insertOne(item);
+      res.send(result);
+    });
+    app.get('/upComingMeals', async (req, res) => {
+      const result = await upComingMealsCollection.find().toArray();
       res.send(result);
     });
     app.get('/users', verifyToken, verifyAdmin, async (req, res) => {
@@ -84,7 +94,13 @@ async function run() {
       const item = req.body;
       const result = await mealsCollection.insertOne(item);
       res.send(result);
-  });
+    });
+    app.delete('/meals/:id', verifyToken, verifyAdmin, async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await mealsCollection.deleteOne(query);
+      res.send(result);
+    });
     app.post('/carts', async (req, res) => {
       const cartsItem = req.body;
       const result = await cartCollection.insertOne(cartsItem);
@@ -97,8 +113,31 @@ async function run() {
       const result = await mealsCollection.findOne(query);
       res.send(result);
     });
+    app.post('/meals', verifyToken, verifyAdmin, async (req, res) => {
+      const item = req.body;
+      // Ensure reviews are stored as an array in MongoDB
+      if (!Array.isArray(item.reviews)) {
+          item.reviews = [];
+      }
+      const result = await mealsCollection.insertOne(item);
+      res.send(result);
+  });
+  app.post('/users', async (req, res) => {
+    const { email } = req.body;
+    const filter = { email: email };
+    const updateDoc = {
+        $set: {
+            isSubscribed: true,
+        },
+    };
+    const result = await userCollection.updateOne(filter, updateDoc);
+    res.send({ success: result.modifiedCount > 0 });
+});
 
-    
+
+
+
+
     app.delete('/carts/:id', async (req, res) => {
       const id = req.params.id
       const query = { _id: new ObjectId(id) }
@@ -115,17 +154,35 @@ async function run() {
       const result = await userCollection.insertOne(user)
       res.send(result)
     });
-    app.post('/subscribe', async (req, res) => {
+    app.patch('/menu/:id', async (req, res) => {
+      const item = req.body;
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) }
+      const updatedDoc = {
+        $set: {
+          title: item.title,
+          category: item.category,
+          price: item.price,
+          ingredients: item.ingredients,
+          mealImage: item.mealImage
+        }
+      }
+      const result = await mealsCollection.updateOne(filter, updatedDoc)
+      res.send(result);
+    })
+    app.post('/users', async (req, res) => {
       const { email } = req.body;
       const filter = { email: email };
       const updateDoc = {
-        $set: {
-          isSubscribed: true,
-        },
+          $set: {
+              isSubscribed: true,
+          },
       };
       const result = await userCollection.updateOne(filter, updateDoc);
       res.send({ success: result.modifiedCount > 0 });
-    });
+  });
+  
+  
 
     app.get('/users/:email', verifyToken, async (req, res) => {
       const email = req.params.email;
@@ -160,6 +217,39 @@ async function run() {
       res.send(result);
     })
 
+    app.patch('/meals/like/:id', async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updatedFood = req.body;
+      const likes = {
+        $set: {
+          title: updatedFood.title,
+          likes: updatedFood.likes,
+          description: updatedFood.description,
+          price: updatedFood.price,
+          category: updatedFood.category,
+          adminName: updatedFood.adminName,
+          mealImage: updatedFood.mealImage,
+          email: updatedFood.email,
+          rating:updatedFood.rating,
+          ingredients:updatedFood.ingredients,
+          postTime: updatedFood.postTime,
+          reviews:updatedFood.reviews,
+          distributorName:updatedFood.distributorName,
+          likers:updatedFood.likers
+        }
+      };
+      const result = await mealsCollection.updateOne(filter, likes);
+      res.send(result);
+    });
+    app.get('/meals/like/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await mealsCollection.deleteOne(query);
+      res.send(result);
+    
+    });
+    
     app.patch('/meals/uptodate/:id', async (req, res) => {
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) };
@@ -181,6 +271,23 @@ async function run() {
       const result = await mealsCollection.updateOne(filter, food);
       res.send(result);
     });
+    app.patch('/meals/newuptodate/:id', async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const item = req.body;
+      const uptodateDoc = {
+        $set: {
+          title: item.title,
+          category: item.category,
+          price: item.price,
+          ingredients: item.ingredients,
+          mealImage: item.mealImage
+        }
+      };
+      const result = await mealsCollection.updateOne(filter, uptodateDoc);
+      res.send(result);
+    });
+
 
     app.get('/reviews', async (req, res) => {
       const result = await reviewCollection.find().toArray();
