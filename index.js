@@ -190,6 +190,22 @@ async function run() {
       const user = await userCollection.findOne(query);
       res.send(user);
     });
+    // app.get('/users/admin/:email', verifyToken, async (req, res) => {
+    //   const email = req.params.email;
+
+    //   if (email !== req.decoded.email) {
+    //     return res.status(403).send({ message: 'forbidden access' })
+    //   }
+
+    //   const query = { email: email };
+    //   const user = await userCollection.findOne(query);
+    //   let admin = false;
+    //   if (user) {
+    //     admin = user?.role === 'admin';
+    //   }
+    //   res.send({ admin });
+    // })
+    
     app.get('/users/admin/:email', verifyToken, async (req, res) => {
       const email = req.params.email;
 
@@ -205,6 +221,7 @@ async function run() {
       }
       res.send({ admin });
     })
+
     app.patch('/users/admin/:id', verifyToken, verifyAdmin, async (req, res) => {
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) };
@@ -243,6 +260,38 @@ async function run() {
       res.send(result);
     });
     app.get('/meals/like/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await mealsCollection.deleteOne(query);
+      res.send(result);
+    
+    });
+    app.patch('/meals/reviews/:id', async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updatedFood = req.body;
+      const likes = {
+        $set: {
+          title: updatedFood.title,
+          likes: updatedFood.likes,
+          description: updatedFood.description,
+          price: updatedFood.price,
+          category: updatedFood.category,
+          adminName: updatedFood.adminName,
+          mealImage: updatedFood.mealImage,
+          email: updatedFood.email,
+          rating:updatedFood.rating,
+          ingredients:updatedFood.ingredients,
+          postTime: updatedFood.postTime,
+          reviews:updatedFood.reviews,
+          distributorName:updatedFood.distributorName,
+          likers:updatedFood.likers
+        }
+      };
+      const result = await mealsCollection.updateOne(filter, likes);
+      res.send(result);
+    });
+    app.get('/meals/reviews/:id', async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await mealsCollection.deleteOne(query);
