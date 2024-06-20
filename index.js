@@ -298,6 +298,33 @@ async function run() {
       res.send(result);
     
     });
+    // app.patch('/meals/reviews/:email', async (req, res) => {
+    //   const email = req.params.email;
+    //   const query = { email:email };
+    //   const result = await mealsCollection.updateOne(query,{$set:(reviews:[])});
+    //   res.send(result);
+    
+    // });
+    app.patch('/meals/reviews/:id', async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const { reviews } = req.body; // The updated reviews array
+  
+      const updateDoc = {
+          $set: {
+              reviews: reviews
+          }
+      };
+  
+      try {
+          const result = await mealsCollection.updateOne(filter, updateDoc);
+          res.send(result);
+      } catch (error) {
+          res.status(500).send({ message: 'Failed to update reviews', error });
+      }
+  });
+  
+    
     
     app.patch('/meals/uptodate/:id', async (req, res) => {
       const id = req.params.id;
