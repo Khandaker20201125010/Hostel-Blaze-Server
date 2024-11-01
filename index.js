@@ -56,14 +56,6 @@ async function run() {
       }
       next();
     };
-    app.get('/users', async (req, res) => {
-      try {
-        const users = await userCollection.find().toArray();
-        res.send(users);
-      } catch (error) {
-        res.status(500).send({ message: 'Error fetching users', error });
-      }
-    });
     app.get('/meals', async (req, res) => {
       const result = await mealsCollection.find().toArray();
       res.send(result);
